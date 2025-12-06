@@ -9,6 +9,7 @@
     margin: 0;
     height: 100vh;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     background: radial-gradient(circle, #003300 50%, black 100%);
@@ -22,9 +23,10 @@
     white-space: pre-wrap;
     line-height: 1.4;
     text-align: left;
-    position: relative;
     width: 80%;
     max-width: 800px;
+    position: relative;
+    z-index: 1;
   }
   .cursor {
     display: inline-block;
@@ -43,8 +45,14 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    background: linear-gradient(to bottom, rgba(105,211,105,0.1) 0%, transparent 100%);
+    background: radial-gradient(circle, rgba(105,211,105,0.05) 20%, transparent 100%);
     animation: sonar 1.5s linear infinite;
+    z-index: 0;
+  }
+  @keyframes sonar {
+    0% { transform: scale(0.8); opacity: 0.1; }
+    50% { transform: scale(1); opacity: 0.2; }
+    100% { transform: scale(1.2); opacity: 0; }
   }
   #openCell {
     display: none;
@@ -53,6 +61,8 @@
     text-decoration: underline;
     cursor: pointer;
     text-align: center;
+    position: relative;
+    z-index: 1;
   }
   #header {
     text-align: center;
@@ -69,6 +79,7 @@
     ------<br><br>
   </div>
 </div>
+
 <div id="sonar"></div>
 <div id="openCell" onclick="window.open('https://docs.google.com/document/d/1VDv8z8wEA4EgCDlLysJ9O-zUoYiR2yKIPPS4PAmVsIY/edit?usp=sharing', '_blank')">открыть ячейку</div>
 
@@ -80,14 +91,12 @@ const lines = [
   "C:\\YANJINGNET\\CH137> dbSearch",
   "Выбрано dbSearch [ПОИСК ПО БАЗЕ ДАННЫХ ]",
   "Загрузка…",
-  "████████████████████████████████████████ 100%",
   "ПОДКЛЮЧЕНО!",
   "'Поиск по (Т)егу' или по 'Поисковой (Ф)разе'? Выберите (Т/Ф)",
   "sudo cd [28SD-36SN-0076]",
-  "Вы пытаетесь получить доступ к личному делу 36SN-007-6. Пожалуйста, введите в поле ниже код доступа",
+  "Вы пытаетесь получить доступ к личному делу 36SN-36SN-0076. Пожалуйста, введите в поле ниже код доступа",
   "[ A7F2-19C4 ]",
   "Пожалуйста, подождите…",
-  "",
   "ДОСТУП ПРЕДОСТАВЛЕН"
 ];
 
@@ -95,15 +104,36 @@ let lineIndex = 0;
 let charIndex = 0;
 let currentLineDiv = null;
 
+// Для прогресса загрузки
+let loadingPercent = 0;
+let loadingLineDiv = null;
+
 function typeLine() {
   if(lineIndex >= lines.length) {
     openCell.style.display = 'block';
     return;
   }
 
+  // Строка загрузки
+  if(lines[lineIndex].includes("Загрузка…")) {
+    if(!loadingLineDiv) {
+      loadingLineDiv = document.createElement('div');
+      terminal.appendChild(loadingLineDiv);
+    }
+    loadingPercent += Math.floor(Math.random() * 10) + 5;
+    if(loadingPercent > 100) loadingPercent = 100;
+    loadingLineDiv.textContent = `Загрузка… ${loadingPercent}%`;
+    if(loadingPercent < 100) {
+      setTimeout(typeLine, 100 + Math.random()*100);
+    } else {
+      lineIndex++;
+      setTimeout(typeLine, 500);
+    }
+    return;
+  }
+
   if(charIndex === 0) {
     currentLineDiv = document.createElement('div');
-    currentLineDiv.style.textAlign = 'left';
     terminal.appendChild(currentLineDiv);
   }
 
