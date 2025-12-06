@@ -17,26 +17,25 @@
     font-family: monospace;
     font-size: 16px;
     overflow: hidden;
+    position: relative;
   }
   #terminal {
-    padding: 20px;
+    padding: 10px 20px;
     white-space: pre-wrap;
-    line-height: 1.4;
+    line-height: 1.2;
     text-align: left;
     width: 80%;
     max-width: 800px;
     position: relative;
-    z-index: 1;
+    z-index: 2;
   }
-  .cursor {
-    display: inline-block;
-    width: 10px;
-    background: rgb(105,211,105);
-    animation: blink 0.7s infinite;
+  .centered {
+    text-align: center;
   }
-  @keyframes blink {
-    0%, 50%, 100% { opacity: 1; }
-    25%, 75% { opacity: 0; }
+  .bold-centered {
+    text-align: center;
+    font-weight: bold;
+    display: block;
   }
   #sonar {
     position: absolute;
@@ -45,111 +44,189 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    background: radial-gradient(circle, rgba(105,211,105,0.05) 20%, transparent 100%);
-    animation: sonar 1.5s linear infinite;
-    z-index: 0;
+    z-index: 1;
+    overflow: hidden;
   }
-  @keyframes sonar {
-    0% { transform: scale(0.8); opacity: 0.1; }
-    50% { transform: scale(1); opacity: 0.2; }
-    100% { transform: scale(1.2); opacity: 0; }
+  .scanline {
+    position: absolute;
+    top: -5%;
+    left: 0;
+    width: 100%;
+    height: 5%;
+    background: linear-gradient(to bottom, rgba(105,211,105,0.3), rgba(105,211,105,0));
+    animation: scan 6s linear infinite;
+  }
+  @keyframes scan {
+    0% { top: -5%; }
+    100% { top: 100%; }
   }
   #openCell {
     display: none;
-    margin-top: 20px;
+    margin-top: 15px;
     color: rgb(105,211,105);
-    text-decoration: underline;
     cursor: pointer;
-    text-align: center;
+    text-align: left;
     position: relative;
-    z-index: 1;
+    z-index: 2;
+    text-decoration: none;
+    padding: 2px 4px;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  #openCell:hover {
+    background-color: rgba(105,211,105,0.2);
+    text-decoration: underline;
+  }
+  #openCell:hover::before {
+    content: "> ";
   }
   #header {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 0.5em;
+  }
+  #header .underlined {
+    text-decoration: underline;
+    font-weight: normal;
   }
 </style>
 </head>
 <body>
 <div id="terminal">
   <div id="header">
-    Терминал №2062<br>
+    <span class="underlined">Терминал №2062</span><br>
     ------<br>
     ЗАПРОС НА ВХОД ПРИНЯТ<br>
-    ------<br><br>
+    ------<br>
   </div>
 </div>
 
-<div id="sonar"></div>
-<div id="openCell" onclick="window.open('https://docs.google.com/document/d/1VDv8z8wEA4EgCDlLysJ9O-zUoYiR2yKIPPS4PAmVsIY/edit?usp=sharing', '_blank')">открыть ячейку</div>
+<div id="sonar">
+  <div class="scanline"></div>
+</div>
+
+<div id="openCell" onclick="window.open('https://docs.google.com/document/d/1VDv8z8wEA4EgCDlLysJ9O-zUoYiR2yKIPPS4PAmVsIY/edit?usp=sharing', '_blank')">
+  Открыть ячейку
+</div>
 
 <script>
 const terminal = document.getElementById('terminal');
 const openCell = document.getElementById('openCell');
 
 const lines = [
-  "C:\\YANJINGNET\\CH137> dbSearch",
-  "Выбрано dbSearch [ПОИСК ПО БАЗЕ ДАННЫХ ]",
-  "Загрузка…",
-  "ПОДКЛЮЧЕНО!",
-  "'Поиск по (Т)егу' или по 'Поисковой (Ф)разе'? Выберите (Т/Ф)",
-  "sudo cd [28SD-36SN-0076]",
-  "Вы пытаетесь получить доступ к личному делу 36SN-36SN-0076. Пожалуйста, введите в поле ниже код доступа",
-  "[ A7F2-19C4 ]",
-  "Пожалуйста, подождите…",
-  "ДОСТУП ПРЕДОСТАВЛЕН"
+  { text: "C:\\YANJINGNET\\CH137>", type: "prefix" },
+  { text: " dbSearch", type: "typewrite" },
+  { text: "", type: "empty" },
+  { text: "Выбрано dbSearch [ПОИСК ПО БАЗЕ ДАННЫХ АПАИБ]", type: "instant" },
+  { text: "| Загрузка...", type: "instant" },
+  { text: "", type: "empty" },
+  { text: "progress", type: "progress" },
+  { text: "", type: "empty" },
+  { text: "| ПОДКЛЮЧЕНО!", type: "instant" },
+  { text: "'Поиск по (Т)егу' или по 'Поисковой (Ф)разе'? Выберите (Т/Ф) ", type: "bold_centered" },
+  { text: "> sudo cd [28SD-715-315]", type: "typewrite" },
+  { text: "| Пароль:  ", type: "instant_inline" },
+  { text: "[ !A7F219C4 ]", type: "typewrite_inline" },
+  { text: "Пожалуйста, подождите... ", type: "instant_center" },
+  { text: "ДОСТУП ПРЕДОСТАВЛЕН ", type: "instant_center" }
 ];
 
 let lineIndex = 0;
 let charIndex = 0;
 let currentLineDiv = null;
-
-// Для прогресса загрузки
 let loadingPercent = 0;
 let loadingLineDiv = null;
+const totalBlocks = 40;
 
-function typeLine() {
+function typeNextLine() {
   if(lineIndex >= lines.length) {
     openCell.style.display = 'block';
     return;
   }
 
-  // Строка загрузки
-  if(lines[lineIndex].includes("Загрузка…")) {
+  const line = lines[lineIndex];
+
+  // стандартный интервал 1 секунда
+  let interval = 1000;
+
+  // особый интервал 3 секунды после "Выбрано dbSearch..."
+  if(line.text.includes("Выбрано dbSearch")) {
+    interval = 3000;
+  }
+
+  if(line.type === "prefix") {
+    currentLineDiv = document.createElement('div');
+    currentLineDiv.textContent = line.text;
+    terminal.appendChild(currentLineDiv);
+    lineIndex++;
+    setTimeout(typeNextLine, interval);
+  } else if(line.type === "typewrite" || line.type === "typewrite_inline") {
+    if(charIndex === 0 && !currentLineDiv) {
+      currentLineDiv = document.createElement('div');
+      terminal.appendChild(currentLineDiv);
+    }
+    currentLineDiv.textContent += line.text.charAt(charIndex);
+    charIndex++;
+    if(charIndex <= line.text.length) {
+      setTimeout(typeNextLine, 120 + Math.random() * 50);
+    } else {
+      charIndex = 0;
+      currentLineDiv = null;
+      lineIndex++;
+      setTimeout(typeNextLine, interval);
+    }
+  } else if(line.type === "instant") {
+    const div = document.createElement('div');
+    div.textContent = line.text;
+    terminal.appendChild(div);
+    lineIndex++;
+    setTimeout(typeNextLine, interval);
+  } else if(line.type === "instant_inline") {
+    currentLineDiv = document.createElement('div');
+    currentLineDiv.textContent = line.text;
+    terminal.appendChild(currentLineDiv);
+    lineIndex++;
+    setTimeout(typeNextLine, interval);
+  } else if(line.type === "instant_center") {
+    const div = document.createElement('div');
+    div.className = "centered";
+    div.textContent = line.text;
+    terminal.appendChild(div);
+    lineIndex++;
+    setTimeout(typeNextLine, interval);
+  } else if(line.type === "bold_centered") {
+    const div = document.createElement('div');
+    div.className = "bold-centered";
+    div.textContent = line.text;
+    terminal.appendChild(div);
+    lineIndex++;
+    setTimeout(typeNextLine, interval);
+  } else if(line.type === "empty") {
+    const div = document.createElement('div');
+    div.textContent = "";
+    terminal.appendChild(div);
+    lineIndex++;
+    setTimeout(typeNextLine, interval);
+  } else if(line.type === "progress") {
     if(!loadingLineDiv) {
       loadingLineDiv = document.createElement('div');
       terminal.appendChild(loadingLineDiv);
     }
-    loadingPercent += Math.floor(Math.random() * 10) + 5;
+    loadingPercent += Math.floor(Math.random() * 3) + 1;
     if(loadingPercent > 100) loadingPercent = 100;
-    loadingLineDiv.textContent = `Загрузка… ${loadingPercent}%`;
+    const blocks = Math.floor((loadingPercent / 100) * totalBlocks);
+    const progressBar = '█'.repeat(blocks) + ' '.repeat(totalBlocks - blocks);
+    loadingLineDiv.textContent = `${progressBar} ${loadingPercent}%`;
     if(loadingPercent < 100) {
-      setTimeout(typeLine, 100 + Math.random()*100);
+      setTimeout(typeNextLine, 150 + Math.random() * 50);
     } else {
       lineIndex++;
-      setTimeout(typeLine, 500);
+      setTimeout(typeNextLine, interval);
     }
-    return;
-  }
-
-  if(charIndex === 0) {
-    currentLineDiv = document.createElement('div');
-    terminal.appendChild(currentLineDiv);
-  }
-
-  currentLineDiv.textContent = '|' + lines[lineIndex].slice(0, charIndex) + (charIndex < lines[lineIndex].length ? '_' : '');
-  charIndex++;
-
-  if(charIndex <= lines[lineIndex].length) {
-    setTimeout(typeLine, 50 + Math.random()*50);
-  } else {
-    charIndex = 0;
-    lineIndex++;
-    setTimeout(typeLine, 200);
   }
 }
 
-window.onload = typeLine;
+window.onload = () => {
+  setTimeout(typeNextLine, 1000);
+};
 </script>
 </body>
 </html>
