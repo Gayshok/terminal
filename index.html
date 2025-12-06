@@ -1,74 +1,125 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>АНТИМЕМ</title>
-  <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    #countdown {
-      font-size: 3rem;
-    }
-    #images {
-      display: none;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      background-color: rgba(255, 255, 255, 0.5);
-    }
-    #images img {
-      max-width: 80%;
-      max-height: 80%;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Терминал клерка</title>
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle, #003300 50%, black 100%);
+    color: rgb(105,211,105);
+    font-family: monospace;
+    font-size: 16px;
+    overflow: hidden;
+  }
+  #terminal {
+    padding: 20px;
+    white-space: pre-wrap;
+    line-height: 1.4;
+    text-align: left;
+    position: relative;
+    width: 80%;
+    max-width: 800px;
+  }
+  .cursor {
+    display: inline-block;
+    width: 10px;
+    background: rgb(105,211,105);
+    animation: blink 0.7s infinite;
+  }
+  @keyframes blink {
+    0%, 50%, 100% { opacity: 1; }
+    25%, 75% { opacity: 0; }
+  }
+  #sonar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(105,211,105,0.1) 0%, transparent 100%);
+    animation: sonar 1.5s linear infinite;
+  }
+  #openCell {
+    display: none;
+    margin-top: 20px;
+    color: rgb(105,211,105);
+    text-decoration: underline;
+    cursor: pointer;
+    text-align: center;
+  }
+  #header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+</style>
 </head>
 <body>
-  <div id="countdown">5</div>
-  <div id="images"></div>
+<div id="terminal">
+  <div id="header">
+    Терминал №2062<br>
+    ------<br>
+    ЗАПРОС НА ВХОД ПРИНЯТ<br>
+    ------<br><br>
+  </div>
+</div>
+<div id="sonar"></div>
+<div id="openCell" onclick="window.open('https://docs.google.com/document/d/1VDv8z8wEA4EgCDlLysJ9O-zUoYiR2yKIPPS4PAmVsIY/edit?usp=sharing', '_blank')">открыть ячейку</div>
 
-  <script>
-    // Функция для отсчёта секунд
-    function countdown(callback) {
-      let count = 5;
-      let countdownDisplay = document.getElementById('countdown');
-      const interval = setInterval(() => {
-        count--;
-        countdownDisplay.textContent = count;
-        if (count <= 0) {
-          clearInterval(interval);
-          countdownDisplay.style.display = 'none';
-          callback();
-        }
-      }, 1000);
-    }
+<script>
+const terminal = document.getElementById('terminal');
+const openCell = document.getElementById('openCell');
 
-    // Функция для отображения изображений
-    function showImages() {
-      let imagesContainer = document.getElementById('images');
-      imagesContainer.style.display = 'flex';
-      let image1 = document.createElement('img');
-      image1.src = 'https://cdn.discordapp.com/attachments/641284405838479363/1193845977841405962/Safeimagekit-resized-img.png?ex=65ae32b5&is=659bbdb5&hm=90de86517d3250982b688cb6370af10c52d5e5d8c9f0d10618b97a3d559c500e&'; // заменить на реальный путь к изображению
-      imagesContainer.appendChild(image1);
-      // Добавьте больше изображений по необходимости
-    }
+const lines = [
+  "C:\\YANJINGNET\\CH137> dbSearch",
+  "Выбрано dbSearch [ПОИСК ПО БАЗЕ ДАННЫХ ]",
+  "Загрузка…",
+  "████████████████████████████████████████ 100%",
+  "ПОДКЛЮЧЕНО!",
+  "'Поиск по (Т)егу' или по 'Поисковой (Ф)разе'? Выберите (Т/Ф)",
+  "sudo cd [28SD-36SN-0076]",
+  "Вы пытаетесь получить доступ к личному делу 36SN-007-6. Пожалуйста, введите в поле ниже код доступа",
+  "[ A7F2-19C4 ]",
+  "Пожалуйста, подождите…",
+  "",
+  "ДОСТУП ПРЕДОСТАВЛЕН"
+];
 
-    // Запускаем отсчёт и после него отображаем изображения
-    countdown(showImages);
+let lineIndex = 0;
+let charIndex = 0;
+let currentLineDiv = null;
 
-    // Перенаправляем пользователя на другой сайт через 5 секунд после отображения изображений
-    setTimeout(() => {
-      window.location.replace('https://docs.google.com/document/d/1im62eaI0lVXuuoZe03V2fqO91TyBjIqIKa53Tn3dMJE/edit#heading=h.d5w8fbbaqcca'); // заменить на реальный URL
-    }, 10000);
-  </script>
+function typeLine() {
+  if(lineIndex >= lines.length) {
+    openCell.style.display = 'block';
+    return;
+  }
+
+  if(charIndex === 0) {
+    currentLineDiv = document.createElement('div');
+    currentLineDiv.style.textAlign = 'left';
+    terminal.appendChild(currentLineDiv);
+  }
+
+  currentLineDiv.textContent = '|' + lines[lineIndex].slice(0, charIndex) + (charIndex < lines[lineIndex].length ? '_' : '');
+  charIndex++;
+
+  if(charIndex <= lines[lineIndex].length) {
+    setTimeout(typeLine, 50 + Math.random()*50);
+  } else {
+    charIndex = 0;
+    lineIndex++;
+    setTimeout(typeLine, 200);
+  }
+}
+
+window.onload = typeLine;
+</script>
 </body>
 </html>
