@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TERMINAL №2062</title> <!-- название сайта на английском -->
+<title>TERMINAL №2062</title>
 <style>
   body {
     margin: 0;
@@ -14,7 +14,7 @@
     align-items: center;
     background: radial-gradient(circle, #003300 50%, black 100%);
     color: rgb(105,211,105);
-    font-family: monospace;
+    font-family: 'Courier Now', monospace;
     font-size: 16px;
     overflow: hidden;
     position: relative;
@@ -86,13 +86,14 @@
   #header .underlined {
     text-decoration: underline;
     font-weight: normal;
+    font-size: 32px;
   }
 </style>
 </head>
 <body>
 <div id="terminal">
   <div id="header">
-    <span class="underlined">ТЕРМИНАЛ №2062</span><br> <!-- надпись на странице на русском -->
+    <span class="underlined">ТЕРМИНАЛ №2062</span><br>
     ------<br>
     ЗАПРОС НА ВХОД ПРИНЯТ<br>
     ------<br>
@@ -122,11 +123,15 @@ const lines = [
   { text: "", type: "empty" },
   { text: "| ПОДКЛЮЧЕНО!", type: "instant" },
   { text: "'Поиск по (Т)егу' или по 'Поисковой (Ф)разе'? Выберите (Т/Ф) ", type: "bold_centered" },
+
   { text: "> sudo cd [28SD-715-315]", type: "typewrite" },
+
+  { text: "| Вы пытаетесь получить доступ к ячейке 715-315. Пожалуйста, введите в поле ниже код доступа", type: "instant" },
+
   { text: "| Пароль:  ", type: "instant_inline" },
   { text: "[ !A7F219C4 ]", type: "typewrite_inline" },
   { text: "Пожалуйста, подождите... ", type: "instant_center" },
-  { text: "ДОСТУП ПРЕДОСТАВЛЕН ", type: "instant_center" }
+  { text: "ДОСТУП ПРЕДОСТАВЛЕН ", type: "delayed", delay: 2500, showOpenCellAfter: 1000 }
 ];
 
 let lineIndex = 0;
@@ -138,18 +143,26 @@ const totalBlocks = 40;
 
 function typeNextLine() {
   if(lineIndex >= lines.length) {
-    openCell.style.display = 'block';
     return;
   }
 
   const line = lines[lineIndex];
-
-  // стандартный интервал 1 секунда
   let interval = 1000;
+  if(line.text.includes("Выбрано dbSearch")) interval = 3000;
 
-  // особый интервал 3 секунды после "Выбрано dbSearch..."
-  if(line.text.includes("Выбрано dbSearch")) {
-    interval = 3000;
+  if(line.type === "delayed") {
+    setTimeout(() => {
+      const div = document.createElement('div');
+      div.className = "centered";
+      div.textContent = line.text;
+      terminal.appendChild(div);
+      if(line.showOpenCellAfter) {
+        setTimeout(() => { openCell.style.display = 'block'; }, line.showOpenCellAfter);
+      }
+      lineIndex++;
+      typeNextLine();
+    }, line.delay);
+    return;
   }
 
   if(line.type === "prefix") {
@@ -158,6 +171,7 @@ function typeNextLine() {
     terminal.appendChild(currentLineDiv);
     lineIndex++;
     setTimeout(typeNextLine, interval);
+
   } else if(line.type === "typewrite" || line.type === "typewrite_inline") {
     if(charIndex === 0 && !currentLineDiv) {
       currentLineDiv = document.createElement('div');
@@ -173,18 +187,21 @@ function typeNextLine() {
       lineIndex++;
       setTimeout(typeNextLine, interval);
     }
+
   } else if(line.type === "instant") {
     const div = document.createElement('div');
     div.textContent = line.text;
     terminal.appendChild(div);
     lineIndex++;
     setTimeout(typeNextLine, interval);
+
   } else if(line.type === "instant_inline") {
     currentLineDiv = document.createElement('div');
     currentLineDiv.textContent = line.text;
     terminal.appendChild(currentLineDiv);
     lineIndex++;
     setTimeout(typeNextLine, interval);
+
   } else if(line.type === "instant_center") {
     const div = document.createElement('div');
     div.className = "centered";
@@ -192,6 +209,7 @@ function typeNextLine() {
     terminal.appendChild(div);
     lineIndex++;
     setTimeout(typeNextLine, interval);
+
   } else if(line.type === "bold_centered") {
     const div = document.createElement('div');
     div.className = "bold-centered";
@@ -199,12 +217,14 @@ function typeNextLine() {
     terminal.appendChild(div);
     lineIndex++;
     setTimeout(typeNextLine, interval);
+
   } else if(line.type === "empty") {
     const div = document.createElement('div');
     div.textContent = "";
     terminal.appendChild(div);
     lineIndex++;
     setTimeout(typeNextLine, interval);
+
   } else if(line.type === "progress") {
     if(!loadingLineDiv) {
       loadingLineDiv = document.createElement('div');
